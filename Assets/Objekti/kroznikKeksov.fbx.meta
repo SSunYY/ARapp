@@ -3,7 +3,17 @@ guid: ab3b745a273472d44af1ca6c3708de5f
 ModelImporter:
   serializedVersion: 24200
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Kroznik
+    second: {fileID: 2100000, guid: 03969856265a1044caec640006037a19, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: keksTekstura
+    second: {fileID: 2100000, guid: 7d6279e9754ebec40b1ea0e6a9215460, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0

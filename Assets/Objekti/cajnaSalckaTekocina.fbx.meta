@@ -3,7 +3,17 @@ guid: b4aac8bc6e7ee0a4186baa69a067c2a9
 ModelImporter:
   serializedVersion: 24200
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Material.001
+    second: {fileID: 2100000, guid: 57a3c75d50ea8e8468a4a2009efbaad5, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: TeacupTexture
+    second: {fileID: 2100000, guid: d78f15eabe2d33242a3e73f3f053651f, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0

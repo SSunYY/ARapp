@@ -1228,16 +1228,21 @@ MonoBehaviour:
   - {fileID: 6333724777999547479, guid: 46a30fe8820001e4c8908990ad8ec575, type: 3}
   - {fileID: 2132743256984202158, guid: bf4c9aefc4b5a04439975185d603a7bf, type: 3}
   - {fileID: 1439847148873973456, guid: 0fd4b60f3671d3f46835cd72fc649d1e, type: 3}
+  arCamera: {fileID: 0}
   showImageMarker: 1
   markerYOffset: 0.001
-  showDebugSphere: 1
+  showDebugSphere: 0
   debugSphereDiameter: 0.04
-  forceUnlitMaterialOnContent: 0
+  showMarkerWhenLimited: 1
+  showContentWhenLimited: 0
+  hideWhenNotInView: 1
+  viewportPadding: 0.05
+  forceUnlitMaterialOnContent: 1
   autoCenterContentToBounds: 1
   autoScaleContent: 0
-  targetMaxDimensionMeters: 0.12
+  targetMaxDimensionMeters: 0.1
   debugLogs: 1
-  customUnlitMaterial: {fileID: 0}
+  customUnlitMaterial: {fileID: 2926557707537190794, guid: f396e3429a4864fc2ad497cb3ce5fe2c, type: 3}
 --- !u!114 &331264289
 MonoBehaviour:
   m_ObjectHideFlags: 0

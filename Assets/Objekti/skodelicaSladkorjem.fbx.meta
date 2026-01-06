@@ -3,7 +3,17 @@ guid: 657766c527993004d8ea8a92ab5e47b5
 ModelImporter:
   serializedVersion: 24200
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: SladkorBeli
+    second: {fileID: 2100000, guid: 498fc4f773a1b4648b17c50c140d08c8, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: SladkorRjavi
+    second: {fileID: 2100000, guid: 54b25da80b19b1447b1b1b2ab7596241, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0

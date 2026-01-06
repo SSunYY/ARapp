@@ -1,5 +1,5 @@
 // 03/01/2026 AI-Tag
-// Image-tracking anchored content + robust debug for pivot/material/scale issues.
+// Image-tracking anchored content + robust debug + optional "only visible when in camera view".
 
 using System;
 using System.Collections;
@@ -14,6 +14,9 @@ public class TrackedImages : MonoBehaviour
     [Header("Prefab ime mora biti ENAKO kot Reference Image name v Image Library")]
     [SerializeField] private GameObject[] arPrefabs;
 
+    [Header("AR Camera (obvezno za 'in view' check)")]
+    [SerializeField] private Camera arCamera;
+
     [Header("Marker (pravokotnik na sliki)")]
     [SerializeField] private bool showImageMarker = true;
     [SerializeField] private float markerYOffset = 0.001f;
@@ -22,12 +25,26 @@ public class TrackedImages : MonoBehaviour
     [SerializeField] private bool showDebugSphere = true;
     [SerializeField] private float debugSphereDiameter = 0.04f;
 
+    [Header("Vidnost glede na tracking state")]
+    [Tooltip("Če ON, bo marker viden tudi pri TrackingState.Limited (koristno za debug).")]
+    [SerializeField] private bool showMarkerWhenLimited = true;
+
+    [Tooltip("Če ON, bo content viden tudi pri TrackingState.Limited (običajno pusti OFF).")]
+    [SerializeField] private bool showContentWhenLimited = false;
+
+    [Header("Vidnost samo ko je slika v kadru")]
+    [SerializeField] private bool hideWhenNotInView = true;
+
+    [Tooltip("Dovoljen rob izven ekrana (0.05 pomeni 5% tolerance).")]
+    [Range(0f, 0.25f)]
+    [SerializeField] private float viewportPadding = 0.05f;
+
     [Header("Diagnostika za prefab")]
-    [Tooltip("Če vklopiš, bo skripta prefabu (in debug objektom) nastavila Unlit material, da izloči shader/pipeline probleme.")]
+    [Tooltip("Če vklopiš, bo skripta prefabu nastavila Unlit material (test shader/material težav).")]
     [SerializeField] private bool forceUnlitMaterialOnContent = true;
 
     [Tooltip("Začasno: premakne instanciran prefab tako, da se njegov renderer-bounds center poravna na izvor slike.")]
-    [SerializeField] private bool autoCenterContentToBounds = true;
+    [SerializeField] private bool autoCenterContentToBounds = false;
 
     [Tooltip("Če je model absurden po velikosti, lahko začasno skaluješ na cilj (npr. ~0.12 m).")]
     [SerializeField] private bool autoScaleContent = false;
@@ -50,6 +67,9 @@ public class TrackedImages : MonoBehaviour
     private void Awake()
     {
         trackedImageManager = GetComponent<ARTrackedImageManager>();
+
+        if (arCamera == null)
+            arCamera = Camera.main;
     }
 
     private void OnEnable()
@@ -94,39 +114,55 @@ public class TrackedImages : MonoBehaviour
     {
         var id = trackedImage.trackableId;
         var imageName = trackedImage.referenceImage.name;
+
         bool isTracking = trackedImage.trackingState == TrackingState.Tracking;
+        bool isLimited = trackedImage.trackingState == TrackingState.Limited;
+
+        // “In view” check (če želiš, da izgine ko ni v kadru)
+        bool inView = !hideWhenNotInView || IsInView(trackedImage.transform.position);
+
+        bool markerVisible = inView && (isTracking || (showMarkerWhenLimited && isLimited));
+        bool contentVisible = inView && (isTracking || (showContentWhenLimited && isLimited));
 
         if (debugLogs)
-            Debug.Log($"[TrackedImages] '{imageName}' state={trackedImage.trackingState} size={trackedImage.referenceImage.size}");
+            Debug.Log($"[TrackedImages] '{imageName}' state={trackedImage.trackingState} size={trackedImage.referenceImage.size} inView={inView}");
 
         // Marker
         if (showImageMarker)
         {
             var marker = EnsureMarker(id, trackedImage);
-            marker.SetActive(isTracking);
+            marker.SetActive(markerVisible);
         }
 
         // Debug sphere
         if (showDebugSphere)
         {
             var sphere = EnsureDebugSphere(id, trackedImage);
-            sphere.SetActive(isTracking);
+            sphere.SetActive(markerVisible); // vezano na markerVisible (debug)
         }
 
         // Content
         var content = EnsureContentPrefab(id, trackedImage, imageName);
         if (content == null) return;
 
-        content.SetActive(isTracking);
+        content.SetActive(contentVisible);
 
         // Keep local alignment to tracked image
         content.transform.localRotation = Quaternion.identity;
 
-        // Diagnostika: bounds, pivot offset, materiali, skala
-        if (isTracking)
-        {
+        if (contentVisible)
             DiagnoseAndFixContent(trackedImage, content);
-        }
+    }
+
+    private bool IsInView(Vector3 worldPos)
+    {
+        if (arCamera == null) return true;
+
+        Vector3 vp = arCamera.WorldToViewportPoint(worldPos);
+        if (vp.z <= 0f) return false;
+
+        float p = viewportPadding;
+        return vp.x >= -p && vp.x <= 1f + p && vp.y >= -p && vp.y <= 1f + p;
     }
 
     private void DiagnoseAndFixContent(ARTrackedImage trackedImage, GameObject content)
@@ -138,7 +174,7 @@ public class TrackedImages : MonoBehaviour
 
         if (renderers.Length == 0)
         {
-            Debug.LogWarning($"[TrackedImages] Content '{content.name}' has 0 renderers. Prefab nima MeshRenderer/SkinnedMeshRenderer ali je vse izklopljeno.");
+            Debug.LogWarning($"[TrackedImages] Content '{content.name}' has 0 renderers.");
             return;
         }
 
@@ -151,17 +187,14 @@ public class TrackedImages : MonoBehaviour
         Vector3 centerLocalToImage = trackedImage.transform.InverseTransformPoint(b.center);
 
         if (debugLogs)
-        {
-            Debug.Log($"[TrackedImages] '{content.name}' bounds.size={b.size} (m) bounds.center(localToImage)={centerLocalToImage}");
-        }
+            Debug.Log($"[TrackedImages] '{content.name}' bounds.size={b.size} bounds.center(localToImage)={centerLocalToImage}");
 
-        // Force unlit material (to remove URP/Standard shader issues)
+        // Force unlit material (diagnostika)
         if (forceUnlitMaterialOnContent)
         {
             var mat = GetOrCreateUnlitMaterial();
             foreach (var r in renderers)
             {
-                // nastavitev na vse materiale
                 var mats = r.sharedMaterials;
                 for (int i = 0; i < mats.Length; i++) mats[i] = mat;
                 r.sharedMaterials = mats;
@@ -169,19 +202,13 @@ public class TrackedImages : MonoBehaviour
             }
         }
 
-        // Auto-center: if pivot/mesh is offset far away, bring bounds center onto the image origin.
+        // Position on image origin
         if (autoCenterContentToBounds)
         {
-            // premakni prefab, da center bounds-a pride v (0,0,0) slike
-            // (odštejemo lokalni offset centra)
             content.transform.localPosition = content.transform.localPosition - centerLocalToImage;
-
-            if (debugLogs)
-                Debug.Log($"[TrackedImages] Auto-centered '{content.name}' by {-centerLocalToImage}");
         }
         else
         {
-            // default: center prefab at image origin
             content.transform.localPosition = Vector3.zero;
         }
 
@@ -193,9 +220,6 @@ public class TrackedImages : MonoBehaviour
             {
                 float factor = targetMaxDimensionMeters / maxDim;
                 content.transform.localScale = content.transform.localScale * factor;
-
-                if (debugLogs)
-                    Debug.Log($"[TrackedImages] Auto-scaled '{content.name}' factor={factor} targetMax={targetMaxDimensionMeters}m");
             }
         }
     }
@@ -211,7 +235,7 @@ public class TrackedImages : MonoBehaviour
 
         if (string.IsNullOrWhiteSpace(imageName))
         {
-            if (debugLogs) Debug.LogWarning("[TrackedImages] Tracked image has empty reference name (ignoring).");
+            if (debugLogs) Debug.LogWarning("[TrackedImages] Tracked image has empty reference name.");
             return null;
         }
 
@@ -225,7 +249,6 @@ public class TrackedImages : MonoBehaviour
         var spawned = Instantiate(prefab, trackedImage.transform);
         spawned.name = imageName;
 
-        // Keep it local to image
         spawned.transform.localPosition = Vector3.zero;
         spawned.transform.localRotation = Quaternion.identity;
 
@@ -263,9 +286,12 @@ public class TrackedImages : MonoBehaviour
 
     private void UpdateMarkerTransform(Transform markerTransform, Vector2 physicalSizeMeters)
     {
-        markerTransform.localRotation = Quaternion.identity;
+        // Quad default normal je +Z. ARTrackedImage “plane” tipično leži tako,
+        // da potrebuješ -90° po X, da bo quad “na sliki”.
+        markerTransform.localRotation = Quaternion.Euler(-90f, 0f, 0f);
+
         markerTransform.localScale = new Vector3(physicalSizeMeters.x, physicalSizeMeters.y, 1f);
-        markerTransform.localPosition = Vector3.zero;
+        markerTransform.localPosition = new Vector3(0f, markerYOffset, 0f);
     }
 
     private GameObject EnsureDebugSphere(TrackableId id, ARTrackedImage trackedImage)
@@ -311,7 +337,7 @@ public class TrackedImages : MonoBehaviour
             Shader.Find("Sprites/Default");
 
         var mat = new Material(shader != null ? shader : Shader.Find("Standard"));
-        mat.color = new Color(1f, 0.2f, 1f, 0.7f); // “magenta-ish” ampak stabilno unlit
+        mat.color = new Color(1f, 0.2f, 1f, 0.7f);
         customUnlitMaterial = mat;
         return mat;
     }

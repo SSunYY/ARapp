@@ -3,7 +3,37 @@ guid: 928c67076d11f0e428939a52edc08284
 ModelImporter:
   serializedVersion: 24200
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Material.003
+    second: {fileID: 2100000, guid: cc3f056500f2afa4fadad7acdd6139e2, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: box_outside
+    second: {fileID: 2100000, guid: c1f7dd8084f8e7e46b724cf280d28a3c, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: tea
+    second: {fileID: 2100000, guid: a83d9fe0d7c19a141ae665d196ad37f4, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: tea2
+    second: {fileID: 2100000, guid: cd230038da411af48978b2d81d5b1003, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: zunaj
+    second: {fileID: 2100000, guid: d4fc6b1d521b32945987bf39de0a7efb, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: zunaj.001
+    second: {fileID: 2100000, guid: c938597af6cc21f4c8be3fda9776f16e, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0
